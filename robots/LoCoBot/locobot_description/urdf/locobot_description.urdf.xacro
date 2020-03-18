@@ -721,7 +721,7 @@
             <mechanicalReduction>1</mechanicalReduction>
         </actuator>
     </transmission>
-    <!-- camera -->
+    <!-- RealSense camera -->
     <gazebo>
         <plugin name="realsense_plugin" filename="librealsense_gazebo_plugin_pt.so">
 		<depthTopicName>depth/image_raw</depthTopicName>
@@ -747,7 +747,6 @@
 
     <gazebo reference="camera_color_frame">
 	<sensor name="color" type="camera">
-            <pose>0 0.015 0 0 0 0</pose>
             <camera name="color">
             <horizontal_fov>1.047</horizontal_fov>
             <image>
@@ -772,7 +771,6 @@
     </gazebo>
     <gazebo reference="camera_left_ir_frame">
 	<sensor name="ired1" type="camera">
-            <pose>0 0 0 0 0 0</pose>
             <camera name="ired1">
             <horizontal_fov>1.047</horizontal_fov>
             <image>
@@ -797,7 +795,6 @@
     </gazebo>
     <gazebo reference="camera_right_ir_frame">
 	<sensor name="ired2" type="camera">
-            <pose>0 -10 0 0 0 0</pose>
             <camera name="ired2">
             <horizontal_fov>1.047</horizontal_fov>
             <image>
@@ -822,7 +819,6 @@
     </gazebo>
     <gazebo reference="camera_depth_frame">
         <sensor name="depth" type="depth">
-            <pose>0 0 0 0 0 0</pose>
             <camera name="depth">
             <horizontal_fov>1.047</horizontal_fov>
             <image>
