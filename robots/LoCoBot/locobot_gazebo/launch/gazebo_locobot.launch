@@ -2,7 +2,7 @@
   <arg name="base"/>
 
   <!-- Static transform to make camera work in sim -->
-  <node pkg="tf" type="static_transform_publisher" name="cam_transform" args="0 0 0 0 0 0 /camera_link /camera_color_optical_frame 100" />
+  <!--<node pkg="tf" type="static_transform_publisher" name="cam_transform" args="0 0 0 -1.57 0 -1.57 /camera_link /camera_color_optical_frame 100" />-->
 
   <include file="$(find locobot_gazebo)/launch/empty_world.launch">  
     <arg name="paused" value="false"/>
@@ -19,7 +19,7 @@
     <param name="robot_description" textfile="$(find locobot_description)/urdf/locobot_lite_description.urdf"/>
 
     <include file="$(find locobot_lite_moveit_config)/launch/planning_context.launch">
-      <arg name="load_robot_description" value="true"/>
+      <arg name="load_robot_description" value="false"/>
     </include>
 
     <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model"
@@ -27,14 +27,16 @@
   </group>
 
   <group if="$(eval base =='kobuki')">
-    <param name="robot_description" textfile="$(find locobot_description)/urdf/locobot_description.urdf"/>
+    <!--<param name="robot_description" textfile="$(find locobot_description)/urdf/locobot_description.urdf"/>-->
+    <arg name="urdf_file" default="$(find xacro)/xacro.py '$(find locobot_description)/urdf/locobot_description.urdf.xacro'" />
+    <param name="robot_description" command="$(arg urdf_file)"/>
 
     <include file="$(find locobot_moveit_config)/launch/planning_context.launch">
-      <arg name="load_robot_description" value="true"/>
+      <arg name="load_robot_description" value="false"/>
     </include>
 
     <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model"
-          args="-file $(find locobot_description)/urdf/locobot_description.urdf -urdf -z 0.05 -model locobot" >
+	  args="-param robot_description -urdf -z 0.05 -model locobot" >
     </node>
 
     <!-- Velocity muxer -->

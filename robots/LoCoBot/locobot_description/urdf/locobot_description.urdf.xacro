@@ -1,5 +1,5 @@
 <?xml version="1.0" ?>
-<robot name="locobot">
+<robot name="locobot" xmlns:xacro="http://ros.org/wiki/xacro">
     <!-- Kobuki -->
     <link name="base_footprint"/>
     <!--
@@ -587,7 +587,7 @@
         <axis xyz="0 1 0"/>
         <limit effort="1" lower="-1.57" upper="1.57" velocity="1"/>
     </joint>
-    <link name="camera_link">
+    <!--<link name="camera_link">
         <inertial>
             <origin rpy="0 0 0" xyz="-0.0132722976093535 0.00168171470080143 2.49829664994428E-06"/>
             <mass value="0.0381925651163644"/>
@@ -614,7 +614,14 @@
         <parent link="head_tilt_link"/>
         <child link="camera_link"/>
         <axis xyz="0 0 0"/>
-    </joint>
+    </joint>-->
+    
+    <!-- RealSense D435 -->
+    <xacro:include filename="$(find locobot_description)/urdf/d435.urdf.xacro" />
+    <sensor_d435 parent="head_tilt_link">
+          <origin rpy="0 0 0" xyz="${0.06705-0.0149} 0 ${-0.00425-0.025/2}"/>
+    </sensor_d435>
+
     <!-- Gazebo Plugins -->
     <gazebo>
         <plugin filename="libgazebo_ros_control.so" name="gazebo_ros_control">
@@ -715,7 +722,130 @@
         </actuator>
     </transmission>
     <!-- camera -->
-    <gazebo reference="camera_link">
+    <gazebo>
+        <plugin name="realsense_plugin" filename="librealsense_gazebo_plugin_pt.so">
+		<depthTopicName>depth/image_raw</depthTopicName>
+		<depthCameraInfoTopicName>depth/camera_info</depthCameraInfoTopicName>
+		<depthOpticalframeName>camera_color_optical_frame</depthOpticalframeName>
+		<rangeMinDepth>0.3</rangeMinDepth>
+		<rangeMaxDepth>10</rangeMaxDepth>
+		<colorTopicName>color/image_raw</colorTopicName>
+		<colorCameraInfoTopicName>color/camera_info</colorCameraInfoTopicName>
+		<colorOpticalframeName>camera_color_optical_frame</colorOpticalframeName>
+		<infrared1TopicName>ired1/image_raw</infrared1TopicName>
+		<infrared1CameraInfoTopicName>ired1/camera_info</infrared1CameraInfoTopicName>
+		<infrared1OpticalframeName>camera_color_optical_frame</infrared1OpticalframeName>
+		<infrared2TopicName>ired2/image_raw</infrared2TopicName>
+		<infrared2CameraInfoTopicName>ired2/camera_info</infrared2CameraInfoTopicName>
+		<infrared2OpticalframeName>camera_color_optical_frame</infrared2OpticalframeName>
+		<pointCloud>true</pointCloud>
+		<pointCloudTopicName>point_cloud</pointCloudTopicName>
+		<pointCloudCutoff>0.3</pointCloudCutoff>
+		<pointCloudCutoffMax>10</pointCloudCutoffMax>
+	</plugin>
+    </gazebo>
+
+    <gazebo reference="camera_color_frame">
+	<sensor name="color" type="camera">
+            <pose>0 0.015 0 0 0 0</pose>
+            <camera name="color">
+            <horizontal_fov>1.047</horizontal_fov>
+            <image>
+                <width>640</width>
+                <height>480</height>
+                <format>RGB_INT8</format>
+            </image>
+            <clip>
+                <near>0.1</near>
+                <far>100</far>
+            </clip>
+            <noise>
+                <type>gaussian</type>
+                <mean>0.0</mean>
+                <stddev>0.007</stddev>
+            </noise>
+            </camera>
+            <always_on>1</always_on>
+            <update_rate>60</update_rate>
+            <visualize>1</visualize>
+        </sensor>
+    </gazebo>
+    <gazebo reference="camera_left_ir_frame">
+	<sensor name="ired1" type="camera">
+            <pose>0 0 0 0 0 0</pose>
+            <camera name="ired1">
+            <horizontal_fov>1.047</horizontal_fov>
+            <image>
+                <width>640</width>
+                <height>480</height>
+                <format>L_INT8</format>
+            </image>
+            <clip>
+                <near>0.1</near>
+                <far>100</far>
+            </clip>
+            <noise>
+                <type>gaussian</type>
+                <mean>0.0</mean>
+                <stddev>0.05</stddev>
+            </noise>
+            </camera>
+            <always_on>1</always_on>
+            <update_rate>60</update_rate>
+            <visualize>0</visualize>
+        </sensor>
+    </gazebo>
+    <gazebo reference="camera_right_ir_frame">
+	<sensor name="ired2" type="camera">
+            <pose>0 -10 0 0 0 0</pose>
+            <camera name="ired2">
+            <horizontal_fov>1.047</horizontal_fov>
+            <image>
+                <width>640</width>
+                <height>480</height>
+                <format>L_INT8</format>
+            </image>
+            <clip>
+                <near>0.1</near>
+                <far>100</far>
+            </clip>
+            <noise>
+                <type>gaussian</type>
+                <mean>0.0</mean>
+                <stddev>0.05</stddev>
+            </noise>
+            </camera>
+            <always_on>1</always_on>
+            <update_rate>60</update_rate>
+            <visualize>0</visualize>
+        </sensor>
+    </gazebo>
+    <gazebo reference="camera_depth_frame">
+        <sensor name="depth" type="depth">
+            <pose>0 0 0 0 0 0</pose>
+            <camera name="depth">
+            <horizontal_fov>1.047</horizontal_fov>
+            <image>
+                    <width>640</width>
+                    <height>480</height>
+            </image>
+            <clip>
+                    <near>0.1</near>
+                    <far>100</far>
+            </clip>
+            <noise>
+                    <type>gaussian</type>
+                    <mean>0.0</mean>
+                    <stddev>0.100</stddev>
+            </noise>
+            </camera>
+            <always_on>1</always_on>
+            <update_rate>60</update_rate>
+            <visualize>0</visualize>
+        </sensor>
+    </gazebo>
+
+    <!--<gazebo reference="camera_depth_frame">
         <sensor name="camera_frame_sensor" type="depth">
             <always_on>true</always_on>
             <update_rate>30.0</update_rate>
@@ -740,7 +870,7 @@
                 <depthImageTopicName>aligned_depth_to_color/image_raw</depthImageTopicName>
                 <depthImageCameraInfoTopicName>aligned_depth_to_color/camera_info</depthImageCameraInfoTopicName>
                 <pointCloudTopicName>depth_registered/points</pointCloudTopicName>
-                <frameName>camera_color_optical_frame</frameName>
+                <frameName>camera_depth_optical_frame</frameName>
                 <pointCloudCutoff>0.4</pointCloudCutoff>
                 <distortionK1>0.00000001</distortionK1>
                 <distortionK2>0.00000001</distortionK2>
@@ -754,48 +884,8 @@
                 <hackBaseline>0</hackBaseline>
             </plugin>
         </sensor>
-    </gazebo>
-    <!--<gazebo reference="camera_link">  
-      <sensor type="depth" name="camera_frame_sensor">
-        <always_on>true</always_on>
-        <update_rate>30.0</update_rate>
-        <camera>
-          <horizontal_fov>0.994837</horizontal_fov>
-          <image>
-            <format>B8G8R8</format>
-            <width>640</width>
-            <height>480</height>
-          </image>
-          <clip>
-            <near>0.01</near>
-            <far>10.0</far>
-          </clip>
-        </camera>
-        <plugin name="kinect_camera_controller" filename="libgazebo_ros_openni_kinect.so">
-          <cameraName>camera</cameraName>
-          <alwaysOn>true</alwaysOn>
-          <updateRate>30.0</updateRate>
-          <imageTopicName>rgb/image_raw</imageTopicName>
-          <depthImageTopicName>depth/image_raw</depthImageTopicName>
-          <pointCloudTopicName>depth_registered/points</pointCloudTopicName>
-          <cameraInfoTopicName>rgb/camera_info</cameraInfoTopicName>
-          <depthImageCameraInfoTopicName>depth/camera_info</depthImageCameraInfoTopicName>
-          <frameName>camera_color_optical_frame</frameName>
-          <baseline>0.1</baseline>
-          <distortion_k1>0.0</distortion_k1>
-          <distortion_k2>0.0</distortion_k2>
-          <distortion_k3>0.0</distortion_k3>
-          <distortion_t1>0.0</distortion_t1>
-          <distortion_t2>0.0</distortion_t2>
-          <pointCloudCutoff>10</pointCloudCutoff>
-	  <CxPrime>0</CxPrime>
-          <Cx>0</Cx>
-          <Cy>0</Cy>
-          <focalLength>0</focalLength>
-          <hackBaseline>0</hackBaseline>
-        </plugin>
-      </sensor>
     </gazebo>-->
+    
 
     <!--      <gazebo reference="cam_mount"><self_collide>true</self_collide></gazebo><self_collide>true</self_collide>-->
     <!-- Gazebo plugins for the base of the robot -->
