@@ -510,18 +510,18 @@
         <visual>
             <origin rpy="0 0 0" xyz="0 0 0"/>
             <geometry>
-                <mesh filename="package://locobot_description/meshes/cam_mount.STL"/>
+                <mesh filename="package://locobot_description/meshes/cam_mount.STL" />
             </geometry>
             <material name="">
                 <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1"/>
             </material>
         </visual>
-        <collision>
+        <!--<collision>
             <origin rpy="0 0 0" xyz="0 0 0"/>
             <geometry>
                 <mesh filename="package://locobot_description/meshes/cam_mount.STL"/>
             </geometry>
-        </collision>
+        </collision>-->
     </link>
     <joint name="cam_mount_joint" type="fixed">
         <origin rpy="0 0 0" xyz="-0.03751 0 0.1331"/>

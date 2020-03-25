@@ -79,25 +79,15 @@
 
     </group>
 
-    <!-- Common -->
-
     <node name="pyrobot_kinematics" pkg="pyrobot_bridge"
                   type="kinematics.py"/>
 
-    
-    <group if="$(eval arg('use_base') or arg('use_sim'))" >
+    <!--<group if="$(eval arg('use_base') or arg('use_sim'))" >
         <include file="$(find base_navigation)/launch/move_base.launch">
             <arg name="use_map" value="$(arg use_vslam)"/>
             <arg name="base" value="$(arg base)"/>
         </include>
-    </group>
-
-
-    <group if="$(eval base =='create')">
-        <include file="$(find locobot_lite_moveit_config)/launch/demo.launch">
-            <arg name="use_rviz" value="$(arg use_rviz)"/>
-        </include>
-    </group>
+    </group>-->
 
     <group if="$(eval base =='kobuki')">
         <include file="$(find locobot_moveit_config)/launch/demo.launch">

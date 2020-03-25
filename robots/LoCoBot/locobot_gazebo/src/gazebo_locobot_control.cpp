@@ -97,9 +97,9 @@ GazeboInteface::GazeboInteface(): node_handle_("") {
     {
         for (int index = 0; index < 9; index++) {
             std_msgs::Float64 msg;
-            msg.data = 0;
+	    msg.data = 0;
             pub_arr[index].publish(msg);
-        }        
+        }
     }
 
     gripper_state = -1; // unknown
