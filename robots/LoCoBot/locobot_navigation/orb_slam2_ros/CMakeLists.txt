@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(orb_slam2_ros)
 
-catkin_python_setup()
-
 message(STATUS "PROJECT_SOURCE_DIR: ${PROJECT_SOURCE_DIR}" )
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -Wall  -O3 -march=native ")
@@ -56,6 +54,8 @@ find_package(catkin REQUIRED COMPONENTS
         tf
         message_generation
         )
+
+catkin_python_setup()
 
 add_message_files(
         FILES

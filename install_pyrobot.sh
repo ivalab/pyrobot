@@ -28,6 +28,7 @@ fi
 
 echo "Python $PYTHON_VERSION chosen for pyRobot installation."
 sudo apt-get -y install python-virtualenv
+sudo apt-get -y install python-testresources
 sudo apt-get -y install ros-kinetic-orocos-kdl ros-kinetic-kdl-parser-py ros-kinetic-python-orocos-kdl ros-kinetic-trac-ik
 
 if [ $PYTHON_VERSION == "2" ]; then
@@ -36,6 +37,7 @@ if [ $PYTHON_VERSION == "2" ]; then
 	if [ ! -d "$VIRTUALENV_FOLDER" ]; then
 		virtualenv --system-site-packages -p python2.7 $VIRTUALENV_FOLDER
 		source ~/${virtualenv_name}/bin/activate
+		pip install --upgrade 'setuptools<45.0.0'
 		pip install .
 		deactivate
 		echo "alias load_pyrobot_env='source $VIRTUALENV_FOLDER/bin/activate '" >> ~/.bashrc

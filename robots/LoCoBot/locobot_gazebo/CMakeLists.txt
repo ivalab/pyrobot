@@ -15,6 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
   dynamixel_workbench_msgs
   actionlib_msgs
   gazebo_msgs
+  locobot_control
 )
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
