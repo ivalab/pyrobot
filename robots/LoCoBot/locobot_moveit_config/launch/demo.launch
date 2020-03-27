@@ -1,5 +1,6 @@
 <launch>
-
+  <arg name="load_robot_description" default="false"/>
+  
   <!-- By default, we do not start a database (it can be large) -->
   <arg name="db" default="false" />
   <!-- Allow user to specify database location -->
@@ -23,7 +24,7 @@
 
   <!-- Load the URDF, SRDF and other .yaml configuration files on the param server -->
   <include file="$(find locobot_moveit_config)/launch/planning_context.launch">
-    <arg name="load_robot_description" value="false"/>
+    <arg name="load_robot_description" value="$(arg load_robot_description)"/>
   </include>
 
   <!-- If needed, broadcast static tf for robot root -->

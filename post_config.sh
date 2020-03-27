@@ -43,7 +43,7 @@ PYROBOT_REPO_PATH=$(pwd)
 if [ $INSTALL_TYPE == "full" ]; then
 	# STEP 1 - Dependencies and config for calibration
 	cd $PYROBOT_REPO_PATH
-	chmod +x src/pyrobot/robots/LoCoBot/locobot_navigation/orb_slam2_ros/scripts/gen_cfg.py
+	chmod +x $PYROBOT_REPO_PATH/robots/LoCoBot/locobot_navigation/orb_slam2_ros/scripts/gen_cfg.py
 	rosrun orb_slam2_ros gen_cfg.py
 	HIDDEN_FOLDER=~/.robot
 	if [ ! -d "$HIDDEN_FOLDER" ]; then

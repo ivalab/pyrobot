@@ -8,6 +8,7 @@
     <arg name="teleop" default="false"/>
     <arg name="use_rviz" default="true"/>
     <arg name="base" default="kobuki"/> <!-- Options: create and kobuki -->
+    <arg name="load_robot_description" default="true"/>
     <arg name="use_realsense_model" default="true"/>
 
     <param name="use_camera" value="$(arg use_camera)"/>
@@ -102,6 +103,7 @@
     <group if="$(eval base =='kobuki')">
         <include file="$(find locobot_moveit_config)/launch/demo.launch">
             <arg name="use_rviz" value="$(arg use_rviz)"/>
+	    <arg name="load_robot_description" value="$(arg load_robot_description)"/>
         </include>
     </group>
 
