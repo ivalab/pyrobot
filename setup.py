@@ -26,7 +26,10 @@ for p in packages:
 
 import sys
 
-if sys.version_info > (3, 0):
+if sys.version_info >= (3, 8):
+    # Python 3.8 code in this block
+    requirements_file = "requirements_python3.8.txt"
+elif sys.version_info > (3, 0):
     # Python 3 code in this block
     requirements_file = "requirements_python3.txt"
 else:
