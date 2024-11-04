@@ -44,12 +44,21 @@ fi
 ubuntu_version="$(lsb_release -r -s)"
 
 if [ $ubuntu_version == "16.04" ]; then
+	echo "Ubuntu 16.04 detected. ROS-Kinetic chosen for installation.";
 	ROS_NAME="kinetic"
 elif [ $ubuntu_version == "18.04" ]; then
+	echo "Ubuntu 18.04 detected. ROS-Melodic chosen for installation.";
 	ROS_NAME="melodic"
+elif [ $ubuntu_version == "20.04" ]; then
+	echo "Ubuntu 20.04 detected. ROS-Noetic chosen for installation.";
+	ROS_NAME="noetic"
+    if [ $PYTHON_VERSION != "3" ]; then
+        echo "ROS-Noetic does not support Python 2 install!"
+        exit 1
+    fi
 else
 	echo -e "Unsupported Ubuntu verison: $ubuntu_version"
-	echo -e "pyRobot only works with 16.04 or 18.04"
+	echo -e "pyRobot only works with 16.04 or 18.04 or 20.04"
 	exit 1
 fi
 
