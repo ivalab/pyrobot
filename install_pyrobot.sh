@@ -115,7 +115,7 @@ if [ $PYTHON_VERSION == "3" ]; then
         source ~/${virtualenv_name}/bin/activate
         # Has to happen before empy because dumb shit
         pip install wheel
-        pip install catkin_pkg pyyaml empy rospkg
+        pip install catkin_pkg pyyaml empy==3.3.4 rospkg
         python -m pip install --upgrade numpy
         pip install .
         deactivate
@@ -154,7 +154,7 @@ if [ $PYTHON_VERSION == "3" ]; then
         . /opt/ros/$ROS_NAME/setup.bash
 
         # Build
-        $BUILD_CMD --cmake-args -DPYTHON_EXECUTABLE=$(which python) -DPYTHON_INCLUDE_DIR=$(ls usr/include/ | grep python3 | head -n1) -DPYTHON_LIBRARY=$(ls /usr/lib/x86_64-linux-gnu/ | grep libpython3.*\.so\$ | head -n1)
+        $BUILD_CMD --cmake-args -DPYTHON_EXECUTABLE=$(which python) -DPYTHON_INCLUDE_DIR=/usr/include/$(ls /usr/include/ | grep python3 | head -n1) -DPYTHON_LIBRARY=/usr/lib/x86_64-linux-gnu/$(ls /usr/lib/x86_64-linux-gnu/ | grep libpython3.*\.so\$ | head -n1)
         
         echo "alias load_pyrobot_env='source $VIRTUALENV_FOLDER/bin/activate && source $PYROBOT_PYTHON3_WS/devel/setup.bash'" >> ~/.bashrc
     fi
