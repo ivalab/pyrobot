@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+if [ -z "$BASH_VERSION" ]; then
+    echo "$0 must be run from bash!"
+    exit 1
+fi
+
 helpFunction()
 {
    echo ""
@@ -77,15 +82,35 @@ sleep 4
 start_time="$(date -u +%s)"
 
 install_packages () {
-	pkg_names=("$@")
-	for package_name in "${pkg_names[@]}"; 
-	do
-		if [ $(dpkg-query -W -f='${Status}' $package_name 2>/dev/null | grep -c "ok installed") -eq 0 ]; then
-		    sudo apt-get -y install $package_name
-		else
-		    echo "${package_name} is already installed";
-		fi
-	done
+    pkg_names=("$@")
+    if (sudo -v) then
+        sudo apt update; sudo apt upgrade
+        for package_name in "${pkg_names[@]}"; 
+        do
+            if [ $(dpkg-query -W -f='${Status}' $package_name 2>/dev/null | grep -c "ok installed") -eq 0 ]; then
+                sudo apt-get -y install $package_name
+            else
+                echo "${package_name} is already installed";
+            fi
+        done
+    else
+        echo "sudo apt-get update -y" > sudo_install.sh
+        echo "sudo apt-get upgrade -y" >> sudo_install.sh
+        echo "sudo apt-get install -y ${pg_names[*]}" >> sudo_install.sh
+        echo "User cannot run sudo. Please run: 'sudo sh sudo_install.sh' on a user that can."
+        read -p "Press enter to continue:" _
+    fi
+}
+
+try_sudo () {
+    echo "Command: $@"
+    if (sudo -v) then
+        sudo $@
+    else
+        echo "$@" > run.sh
+        echo "User cannot run sudo. Please run: 'sudo sh run.sh' on a user that can."
+        read -p "Press enter to continue:" _
+    fi
 }
 
 
@@ -97,14 +122,14 @@ install_packages () {
 
 # STEP 1 - Install basic dependencies
 declare -a package_names=(
-	"python-tk"
-	"python-sip"
+	"python$PYTHON_VERSION-tk"
+	"python$PYTHON_VERSION-sip"
 	"vim" 
 	"git" 
 	"terminator"
-	"python-pip"
-	"python-dev"
-	"python-virtualenv"
+	"python$PYTHON_VERSION-pip"
+	"python$PYTHON_VERSION-dev"
+	"python$PYTHON_VERSION-virtualenv"
 	"screen"
 	"openssh-server" 
 	"libssl-dev" 
@@ -114,54 +139,19 @@ declare -a package_names=(
 	)
 install_packages "${package_names[@]}"
 
-sudo pip install --upgrade cryptography
-sudo python -m easy_install --upgrade pyOpenSSL
-sudo pip install --upgrade pip==20.3
+pip install --upgrade cryptography
+python -m easy_install --upgrade pyOpenSSL
+pip install --upgrade pip
+#sudo pip install --upgrade cryptography
+#sudo python -m easy_install --upgrade pyOpenSSL
+#sudo pip install --upgrade pip==20.3
 
 
 # STEP 2 - Install ROS 
 
-if [ $ROS_NAME == "kinetic" ]; then
-
-	if [ $(dpkg-query -W -f='${Status}' ros-kinetic-desktop-full 2>/dev/null | grep -c "ok installed") -eq 0 ]; then 
-		echo "Installing ROS..."
-		sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu xenial main" > /etc/apt/sources.list.d/ros1-latest.list'
-		sudo -E apt-key adv --keyserver 'hkp://keyserver.ubuntu.com:80' --recv-key C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
-		sudo apt-get update
-		sudo apt-get -y install ros-kinetic-desktop-full
-		if [ -f /etc/ros/rosdep/sources.list.d/20-default.list ]; then
-		    sudo rm /etc/ros/rosdep/sources.list.d/20-default.list
-		fi
-		sudo apt -y install python-rosdep python-rosinstall python-rosinstall-generator python-wstool build-essential
-		sudo apt -y install python-rosdep
-		sudo rosdep init
-		rosdep update
-		echo "source /opt/ros/kinetic/setup.bash" >> ~/.bashrc
-	else
-		echo "ros-kinetic-desktop-full is already installed";
-	fi
-else
-	if [ $(dpkg-query -W -f='${Status}' ros-melodic-desktop-full 2>/dev/null | grep -c "ok installed") -eq 0 ]; then 
-		echo "Installing ROS..."
-		sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu bionic main" > /etc/apt/sources.list.d/ros1-latest.list'
-		sudo apt-key adv --keyserver 'hkp://keyserver.ubuntu.com:80' --recv-key C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
-		sudo apt-get update
-		sudo apt-get -y install ros-melodic-desktop-full
-		if [ -f /etc/ros/rosdep/sources.list.d/20-default.list ]; then
-			sudo rm /etc/ros/rosdep/sources.list.d/20-default.list
-		fi
-		sudo apt -y install python-rosdep python-rosinstall python-rosinstall-generator python-wstool build-essential
-		sudo apt -y install python-rosdep
-		sudo rosdep init
-		rosdep update
-		echo "source /opt/ros/melodic/setup.bash" >> ~/.bashrc
-	else
-		echo "ros-melodic-desktop-full is already installed";
-	fi
-fi
+bash ros_install.sh $ROS_NAME
 
 source /opt/ros/$ROS_NAME/setup.bash
-
 
 # STEP 3 - Install ROS debian dependencies
 declare -a ros_package_names=(
@@ -176,13 +166,19 @@ declare -a ros_package_names=(
 	"ros-$ROS_NAME-navigation"
 	"ros-$ROS_NAME-rgbd-launch"
 	"ros-$ROS_NAME-kdl-parser-py"
-	"ros-$ROS_NAME-orocos-kdl"
-	"ros-$ROS_NAME-python-orocos-kdl"
   	"ros-$ROS_NAME-ddynamic-reconfigure"
+	"ros-$ROS_NAME-kobuki-*"
+	"ros-$ROS_NAME-ecl-streams"
 	#"ros-$ROS_NAME-libcreate"
 	)
 
 install_packages "${ros_package_names[@]}"
+
+# HACK: These don't exist for noetic?
+if [ $ROS_NAME != "noetic" ]; then
+	install_packages "ros-$ROS_NAME-orocos-kdl" "ros-$ROS_NAME-python-orocos-kdl"
+fi
+
 
 if [ $INSTALL_TYPE == "full" ]; then
 
@@ -235,6 +231,9 @@ if [ $INSTALL_TYPE == "full" ]; then
 	source $CAMERA_FOLDER/devel/setup.bash
 fi
 
+# HACK: from pyrobot/robots/LoCoBot/install, up to top.
+PYROBOT_ROOT="$(dirname "$0")"/../../../../pyrobot
+
 # STEP 5 - Setup catkin workspace
 echo "Setting up robot software..."
 LOCOBOT_FOLDER=~/low_cost_ws
@@ -245,10 +244,7 @@ if [ ! -d "$LOCOBOT_FOLDER/src" ]; then
 fi
 if [ ! -d "$LOCOBOT_FOLDER/src/pyrobot" ]; then
 	cd $LOCOBOT_FOLDER/src
-	git clone https://github.com/facebookresearch/pyrobot.git
-	cd pyrobot
-	git checkout main
-	git submodule update --init --recursive
+	ln -s $PYROBOT_ROOT pyrobot
   if [ $LOCOBOT_PLATFORM == "cmu" ]; then
     cd $LOCOBOT_FOLDER/src/pyrobot/robots/LoCoBot/locobot_description/urdf
     ln cmu_locobot_description.urdf locobot_description.urdf
@@ -278,7 +274,7 @@ if [ ! -d "$LOCOBOT_FOLDER/src/pyrobot/robots/LoCoBot/thirdparty" ]; then
 		git clone https://github.com/ROBOTIS-GIT/dynamixel-workbench-msgs.git
 		git clone https://github.com/ros-controls/ros_control.git
 		git clone https://github.com/kalyanvasudev/ORB_SLAM2.git
-		git clone https://github.com/s-gupta/ar_track_alvar.git
+		git clone https://github.com/ros-perception/ar_track_alvar.git
 
 	if [ $ROS_NAME == "kinetic" ]; then
 		cd create_autonomy && git checkout 90e597ea4d85cde1ec32a1d43ea2dd0b4cbf481c && cd ..
@@ -287,15 +283,23 @@ if [ ! -d "$LOCOBOT_FOLDER/src/pyrobot/robots/LoCoBot/thirdparty" ]; then
 		cd dynamixel-workbench-msgs && git checkout 93856f5d3926e4d7a63055c04a3671872799cc86 && cd ..
 		cd ros_control && git checkout 44cf68aab6cb1293e91f69ef7efe30b80195356b && cd ..
 		cd ORB_SLAM2 && git checkout ec8d750d3fc813fe5cef82f16d5cc11ddfc7bb3d && cd ..
-		cd ar_track_alvar && git checkout 625a3cf928552ee5bf97453897af6790d523962f && cd ..
-	else
+		cd ar_track_alvar && git checkout kinetic-devel && cd ..
+	elif [ $ROS_NAME == "melodic" ]; then
 		cd create_autonomy && git checkout 90e597ea4d85cde1ec32a1d43ea2dd0b4cbf481c && cd ..
 		cd dynamixel-workbench && git checkout bf60cf8f17e8385f623cbe72236938b5950d3b56 && cd ..
 		cd DynamixelSDK && git checkout 05dcc5c551598b4d323bf1fb4b9d1ee03ad1dfd9 && cd ..
 		cd dynamixel-workbench-msgs && git checkout 93856f5d3926e4d7a63055c04a3671872799cc86 && cd ..
 		cd ros_control && git checkout cd39acfdb2d08dc218d04ff98856b0e6a525e702 && cd ..
 		cd ORB_SLAM2 && git checkout ec8d750d3fc813fe5cef82f16d5cc11ddfc7bb3d && cd ..
-		cd ar_track_alvar && git checkout a870d5f00a548acb346bfcc89d42b997771d71a3 && cd ..
+		cd ar_track_alvar && git checkout melodic-devel && cd ..
+	elif [ $ROS_NAME == "noetic" ]; then
+		cd create_autonomy && git checkout noetic && cd ..
+		cd dynamixel-workbench && git checkout noetic-devel && cd ..
+		cd DynamixelSDK && git checkout noetic-devel && cd ..
+		cd dynamixel-workbench-msgs && git checkout noetic-devel && cd ..
+		cd ros_control && git checkout noetic-devel && cd ..
+		cd ORB_SLAM2 && git checkout ec8d750d3fc813fe5cef82f16d5cc11ddfc7bb3d && cd ..
+		cd ar_track_alvar && git checkout noetic-devel && cd ..
 	fi
 fi
 
@@ -328,7 +332,7 @@ if [ ! -d "$LOCOBOT_FOLDER/src/turtlebot" ]; then
 	cd orocos-bayesian-filtering/orocos_bfl/
 	./configure
 	make
-	sudo make install
+	try_sudo make install
 	cd ../
 	make
 	cd ../
@@ -353,9 +357,6 @@ if [ ! -d "$LOCOBOT_FOLDER/src/turtlebot" ]; then
 	mv yujin_ocs/yocs_cmd_vel_mux yujin_ocs/yocs_controllers .
 	mv yujin_ocs/yocs_safety_controller yujin_ocs/yocs_velocity_smoother .
 	rm -rf yujin_ocs
-
-	sudo apt-get install ros-$ROS_NAME-kobuki-* -y
-	sudo apt-get install ros-$ROS_NAME-ecl-streams -y
 fi
 
 # STEP 6 - Make a virtual env to install other dependencies (with pip)
