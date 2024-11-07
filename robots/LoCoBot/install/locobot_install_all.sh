@@ -5,6 +5,8 @@ if [ -z "$BASH_VERSION" ]; then
     exit 1
 fi
 
+SCRIPT_DIR="$(dirname "$0")"
+
 helpFunction()
 {
    echo ""
@@ -96,7 +98,7 @@ install_packages () {
     else
         echo "sudo apt-get update -y" > sudo_install.sh
         echo "sudo apt-get upgrade -y" >> sudo_install.sh
-        echo "sudo apt-get install -y ${pg_names[*]}" >> sudo_install.sh
+        echo "sudo apt-get install -y ${pkg_names[@]}" >> sudo_install.sh
         echo "User cannot run sudo. Please run: 'sudo sh sudo_install.sh' on a user that can."
         read -p "Press enter to continue:" _
     fi
@@ -107,7 +109,8 @@ try_sudo () {
     if (sudo -v) then
         sudo $@
     else
-        echo "$@" > run.sh
+        echo "cd $(pwd)" > "$SCRIPT_DIR/run.sh"
+        echo "$@" > "$SCRIPT_DIR/run.sh"
         echo "User cannot run sudo. Please run: 'sudo sh run.sh' on a user that can."
         read -p "Press enter to continue:" _
     fi
@@ -130,6 +133,7 @@ declare -a package_names=(
 	"python$PYTHON_VERSION-pip"
 	"python$PYTHON_VERSION-dev"
 	"python$PYTHON_VERSION-virtualenv"
+	"python$PYTHON_VERSION-pybind11"
 	"screen"
 	"openssh-server" 
 	"libssl-dev" 
@@ -139,9 +143,9 @@ declare -a package_names=(
 	)
 install_packages "${package_names[@]}"
 
+python3 -m pip install --upgrade pip
 pip install --upgrade cryptography
-python -m easy_install --upgrade pyOpenSSL
-pip install --upgrade pip
+pip install --upgrade pyOpenSSL
 #sudo pip install --upgrade cryptography
 #sudo python -m easy_install --upgrade pyOpenSSL
 #sudo pip install --upgrade pip==20.3
@@ -155,10 +159,10 @@ source /opt/ros/$ROS_NAME/setup.bash
 
 # STEP 3 - Install ROS debian dependencies
 declare -a ros_package_names=(
-	"ros-$ROS_NAME-dynamixel-motor" 
+	#"ros-$ROS_NAME-dynamixel-motor" # Installed from source...
 	"ros-$ROS_NAME-moveit" 
 	"ros-$ROS_NAME-trac-ik"
-	"ros-$ROS_NAME-ar-track-alvar"
+	#"ros-$ROS_NAME-ar-track-alvar"	# Installed from source...
 	"ros-$ROS_NAME-move-base"
 	"ros-$ROS_NAME-ros-control"
 	"ros-$ROS_NAME-gazebo-ros-control"
@@ -176,7 +180,9 @@ install_packages "${ros_package_names[@]}"
 
 # HACK: These don't exist for noetic?
 if [ $ROS_NAME != "noetic" ]; then
-	install_packages "ros-$ROS_NAME-orocos-kdl" "ros-$ROS_NAME-python-orocos-kdl"
+	install_packages "python-rosdep" "ros-$ROS_NAME-orocos-kdl" "ros-$ROS_NAME-python-orocos-kdl"
+else
+	install_packages "python3-rosdep" "liborocos-kdl-dev"
 fi
 
 
@@ -232,7 +238,8 @@ if [ $INSTALL_TYPE == "full" ]; then
 fi
 
 # HACK: from pyrobot/robots/LoCoBot/install, up to top.
-PYROBOT_ROOT="$(dirname "$0")"/../../../../pyrobot
+PYROBOT_ROOT="$(realpath "$(dirname "$0")"/../../../../pyrobot)"
+echo $PYROBOT_ROOT
 
 # STEP 5 - Setup catkin workspace
 echo "Setting up robot software..."
@@ -304,12 +311,15 @@ if [ ! -d "$LOCOBOT_FOLDER/src/pyrobot/robots/LoCoBot/thirdparty" ]; then
 fi
 
 cd $LOCOBOT_FOLDER
-rosdep update 
+try_sudo rosdep init
+rosdep update
 rosdep install --from-paths src/pyrobot -i -y
-cd $LOCOBOT_FOLDER/src/pyrobot/robots/LoCoBot/install
-chmod +x install_orb_slam2.sh
-source install_orb_slam2.sh
-cd $LOCOBOT_FOLDER
+
+#cd $LOCOBOT_FOLDER/src/pyrobot/robots/LoCoBot/install
+#chmod +x install_orb_slam2.sh
+#source install_orb_slam2.sh
+#cd $LOCOBOT_FOLDER
+
 if [ -d "$LOCOBOT_FOLDER/devel" ]; then
 	rm -rf $LOCOBOT_FOLDER/devel
 fi
@@ -346,12 +356,19 @@ if [ ! -d "$LOCOBOT_FOLDER/src/turtlebot" ]; then
 	rm -r kobuki_qtestsuite
 	cd -
 	git clone https://github.com/yujinrobot/kobuki.git
-	cd kobuki && git checkout $ROS_NAME && cd ..
+
+	if [ $ROS_NAME == "noetic" ]; then
+		# HACK: It works on the melodic branch FML
+		cd kobuki && git checkout melodic && cd ..
+	else
+		cd kobuki && git checkout $ROS_NAME && cd ..
+	fi
+
 	mv kobuki/kobuki_description kobuki/kobuki_bumper2pc \
 	  kobuki/kobuki_node kobuki/kobuki_keyop \
 	  kobuki/kobuki_safety_controller ./
 	
-	#rm -r kobuki
+	rm -rf kobuki
 
 	git clone https://github.com/yujinrobot/yujin_ocs.git
 	mv yujin_ocs/yocs_cmd_vel_mux yujin_ocs/yocs_controllers .
