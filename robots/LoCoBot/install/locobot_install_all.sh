@@ -5,7 +5,9 @@ if [ -z "$BASH_VERSION" ]; then
     exit 1
 fi
 
-SCRIPT_DIR="$(dirname "$0")"
+if [ -z ${INSTALL_SCRIPT_DIR+x} ] then
+    export INSTALL_SCRIPT_DIR="$(pwd)"
+fi
 
 helpFunction()
 {
@@ -96,9 +98,9 @@ install_packages () {
             fi
         done
     else
-        echo "sudo apt-get update -y" > sudo_install.sh
-        echo "sudo apt-get upgrade -y" >> sudo_install.sh
-        echo "sudo apt-get install -y ${pkg_names[@]}" >> sudo_install.sh
+        echo "sudo apt-get update -y" > "$INSTALL_SCRIPT_DIR/sudo_install.sh"
+        echo "sudo apt-get upgrade -y" >> "$INSTALL_SCRIPT_DIR/sudo_install.sh"
+        echo "sudo apt-get install -y ${pkg_names[@]}" >> "$INSTALL_SCRIPT_DIR/sudo_install.sh"
         echo "User cannot run sudo. Please run: 'sudo sh sudo_install.sh' on a user that can."
         read -p "Press enter to continue:" _
     fi
@@ -109,9 +111,9 @@ try_sudo () {
     if (sudo -v) then
         sudo $@
     else
-        echo "cd $(pwd)" > "$SCRIPT_DIR/run.sh"
-        echo "$@" > "$SCRIPT_DIR/run.sh"
-        echo "User cannot run sudo. Please run: 'sudo sh run.sh' on a user that can."
+        echo "cd $(pwd)" > "$INSTALL_SCRIPT_DIR/run.sh"
+        echo "$@" >> "$INSTALL_SCRIPT_DIR/run.sh"
+        echo "User cannot run sudo. Please run: 'sh run.sh' on a user that can."
         read -p "Press enter to continue:" _
     fi
 }
@@ -311,9 +313,19 @@ if [ ! -d "$LOCOBOT_FOLDER/src/pyrobot/robots/LoCoBot/thirdparty" ]; then
 fi
 
 cd $LOCOBOT_FOLDER
-try_sudo rosdep init
-rosdep update
-rosdep install --from-paths src/pyrobot -i -y
+if (sudo -v) then
+    sudo rosdep init
+    rosdep update
+    rosdep install --from-paths src/pyrobot -i -y
+else
+    echo "Requesting sudo privileges to run rosdep."
+    echo "cd $(pwd)" > "$INSTALL_SCRIPT_DIR/run.sh"
+    echo "sudo rosdep init" >> "$INSTALL_SCRIPT_DIR/run.sh"
+    echo "rosdep update" >> "$INSTALL_SCRIPT_DIR/run.sh"
+    echo "rosdep install --from-paths src/pyrobot -i -y" >> "$INSTALL_SCRIPT_DIR/run.sh"
+    echo "User cannot run sudo. Please run: 'sh run.sh' on a user that can."
+    read -p "Press enter to continue:" _
+fi
 
 #cd $LOCOBOT_FOLDER/src/pyrobot/robots/LoCoBot/install
 #chmod +x install_orb_slam2.sh
@@ -444,6 +456,8 @@ fi
 
 end_time="$(date -u +%s)"
 elapsed="$(($end_time-$start_time))"
+
+unset INSTALL_SCRIPT_DIR
 
 echo "Installation complete, took $elapsed seconds in total"
 echo "NOTE: Remember to logout and login back again before using the robot!"

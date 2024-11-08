@@ -5,6 +5,10 @@ if [ -z "$BASH_VERSION" ]; then
     exit 1
 fi
 
+if [ -z ${INSTALL_SCRIPT_DIR+x} ] then
+    export INSTALL_SCRIPT_DIR="$(pwd)"
+fi
+
 helpFunction()
 {
    echo ""
@@ -160,3 +164,5 @@ if [ $PYTHON_VERSION == "3" ]; then
     fi
     deactivate
 fi
+
+unset INSTALL_SCRIPT_DIR
